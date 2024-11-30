@@ -1,10 +1,20 @@
-from PyQt6.QtWidgets import QWidget, QApplication
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
-from card_ui import Ui_Form
+from PyQt6.QtWidgets import QWidget, QLabel
 
-class CardWidget(QWidget, Ui_Form):
-    def __init__(self, card_picture, parent=None):
+class CardWidget(QWidget):
+    def __init__(self, card_picture, size=None, parent=None):
         super().__init__(parent)
-        self.setupUi(self)
 
-        self.cardImage.setPixmap(card_picture)
+        if size is None:
+            size = [300, 200]
+
+        picture = QPixmap(card_picture)
+        picture = picture.scaled(*size, Qt.AspectRatioMode.KeepAspectRatio)
+
+        self.cardImage = QLabel(self)
+        self.cardImage.setPixmap(picture)
+        self.cardImage.resize(card_picture.size())
+
+    def widget(self):
+        return self.cardImage
