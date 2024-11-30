@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QApplication
+from PyQt6.QtGui import QPixmap
 from card_ui import Ui_Form
 
 class CardWidget(QWidget, Ui_Form):
