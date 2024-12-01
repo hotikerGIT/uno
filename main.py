@@ -1,42 +1,42 @@
-import sys
+import pygame
+from card import Card
+from deck import Deck
+from hand import Hand
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QMainWindow, QLayout, QSpacerItem, QSizePolicy
-from PyQt6.QtGui import QPixmap
-from card import CardWidget
-from main_window import Ui_MainWindow
+# раздача
+def generate_hand():
+    deck = Deck()
 
+    # создаем объект класса Hand
+    hand = Hand([deck.get_random_card() for _ in range(7)])
 
-class MainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
+    x, y = 0, 100
+    # создание карт требует распределения по месту, поэтому
+    # мы не делегируем метод, так как параметр разный
+    for i, tmp_card in enumerate(hand.get_cards()):
+        x = 50 * i
+        tmp_card.move(x, y)
+        tmp_card.display(screen)
 
-        self.center_layout = QVBoxLayout()
-        spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.center_layout.addItem(spacer)
-        self.centralwidget.setLayout(self.center_layout)
+    return deck, hand
 
-        card1 = CardWidget(QPixmap('assets/blue/1_blue.png'))
-        card2 = CardWidget(QPixmap('assets/blue/2_blue.png'))
-        card3 = CardWidget(QPixmap('assets/blue/3_blue.png'))
+pygame.init()
+screen = pygame.display.set_mode((1000, 1000))
+clock = pygame.time.Clock()
 
-        self.playerCardLayout.addWidget(card1.widget())
-        self.playerCardLayout.addWidget(card2.widget())
-        self.playerCardLayout.addWidget(card3.widget())
+playing_deck, current_hand = generate_hand()
 
-        self.playerCardLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.playerCardLayout.setContentsMargins(0, 0, 0, 0)
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
-        self.center_layout.addLayout(self.playerCardLayout)
-        self.center_layout.setStretch(0, 1)
-        self.center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        current_hand.handle_event(event)
 
+    screen.fill((0, 0, 0))
+    current_hand.display(screen)
+    pygame.display.flip()
+    clock.tick(60)
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    window = MainWindow()
-    window.show()
-
-    sys.exit(app.exec())
+pygame.quit()
