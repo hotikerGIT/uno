@@ -8,6 +8,8 @@ class Card:
     def __init__(self, color, rank, wild=None, wild_plus=None):
         # атрибуты инициализации
         self.special = False
+        self.backup_surface = None
+        self.backup_image = None
 
         # для диких карт все отдельно
         if wild:
@@ -26,12 +28,14 @@ class Card:
             self.color = color
             self.image = pygame.image.load(f'assets/{color}/{rank}_{color}.png')
 
+        self.data = [self.rank, self.color]
+
         self.surface = pygame.Surface((self.image.get_width(), self.image.get_height()))
         self.surface.blit(self.image, (0, 0))
         self.rect = self.surface.get_rect(topleft=(0, 0))
 
         # ресайз со старта потому что пнг-шки слишком большие
-        self.resize(1 / 2)
+        self.surface = self.resize(self.surface, 1 / 2)
 
         # атрибуты методов
         self.dragging = False
@@ -39,10 +43,6 @@ class Card:
         self.offset_y = self.rect.y
 
     def display(self, screen):
-        # метод отображения чтобы одно и то же двадцать раз не писать
-        if Card.selection == [self.rank, self.color]:
-            self.image = self.add_border(self.surface, 25)
-
         screen.blit(self.surface, self.rect)
 
     def move(self, x, y):
@@ -50,42 +50,76 @@ class Card:
         self.rect.x = x
         self.rect.y = y
 
-    def add_border(self, surface, border_width):
+    def pickup_card(self, border_width):
+        # создаем бекапы
+        backup_surface = self.surface
+        backup_image = self.image
+
+        # добавляем окаймление
         border_surface = pygame.Surface(
-            (surface.get_width() + 2 * border_width, surface.get_height() + 2 * border_width)
+            (
+            self.surface.get_width() + 2 * border_width,
+            self.surface.get_height() + 2 * border_width
+            )
         )
+        border_surface.fill((255, 255, 255))
+        border_surface.blit(self.surface, (border_width, border_width))
 
-        border_surface.fill((0, 100, 0))  # White border
-        border_surface.blit(surface, (border_width, border_width))
-        return border_surface
+        # увеличиваем выбранную картинку
+        border_surface = self.resize(border_surface, 1 / 1.6)  # не знаю почему, но это работает только так
 
-    def resize(self, scale):
+        # возвращаем плоскость с окаймлением, а также бекапы
+        return border_surface, backup_surface, backup_image
+
+    def resize(self, surface, scale):
         # создаем плоскость, пропорционально размеру
-        self.surface = pygame.transform.scale(
+        surface = pygame.transform.scale(
             self.image,
         (int(self.image.get_width() * scale),
             int(self.image.get_height() * scale))
         )
 
         # и обновляем ее хит бокс
-        self.rect = self.surface.get_rect(topleft=(self.rect.x, self.rect.y))
+        # ОПАСНО
+        self.rect = surface.get_rect(topleft=(self.rect.x, self.rect.y))
+        return surface
 
     def handle_event(self, event):
+        # нажатие мыши
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # проверка нажатия на карту
             if self.rect.collidepoint(event.pos):
-                data = [self.rank, self.color]
-
-                if (not Card.is_card_selected) or Card.selection[0] == data:
+                # проверка отсутствия взятия двух карт одновременно
+                if (not Card.is_card_selected) or Card.selection[0] == self.data:
+                    # изменяем выбранные карты и задаем атрибут переноса
                     self.dragging = True
-                    self.offset_x = event.pos[0] - self.rect.x
-                    self.offset_y = event.pos[1] - self.rect.y
-                    Card.selection = data
+                    Card.selection = self.data
                     Card.is_card_selected = True
 
+                    # задаем движение
+                    self.offset_x = event.pos[0] - self.rect.x
+                    self.offset_y = event.pos[1] - self.rect.y
+
+                    # создаем окаймление карты
+                    self.surface, self.backup_surface, self.backup_image = self.pickup_card(-5)
+
+        # отпускание мышки
         elif event.type == pygame.MOUSEBUTTONUP:
+            # убираем выделение карты
+            if self.backup_surface:
+                self.surface = self.backup_surface
+                self.backup_surface = None
+
+            if self.backup_image:
+                self.image = self.backup_image
+                self.surface = self.resize(self.surface, 1 / 2)
+                self.backup_image = None
+
+            # убираем выделенную карту и атрибут перемещения
             self.dragging = False
             Card.is_card_selected = False
 
+        # перемещение мышки
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging:
                 self.rect.x = event.pos[0] - self.offset_x
