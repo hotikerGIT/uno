@@ -1,5 +1,3 @@
-# TODO: рефактор ресайза
-
 import pygame
 
 class Card:
