@@ -15,7 +15,7 @@ def generate_hand():
     # мы не делегируем метод, так как параметр разный
     for i, tmp_card in enumerate(hand.get_cards()):
         x = 50 * i
-        tmp_card.move(x, y)
+        tmp_card.move(x, y, i)
         tmp_card.display(screen)
 
     return deck, hand
