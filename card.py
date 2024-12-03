@@ -1,8 +1,12 @@
 import pygame
+from values import *
+
 
 class Card:
     # статическая переменная, предотвращающая взятие нескольких карт за раз
     selection = None
+
+    # статическая переменная определения наложения карт друг на друга
     top_z = 0
 
     def __init__(self, color, rank, wild=None, wild_plus=None):
@@ -53,6 +57,14 @@ class Card:
         if z:
             self.z = z[0]
 
+    def hide(self):
+        self.image = pygame.image.load('assets/card back/card_back.png')
+
+        self.surface = pygame.Surface((self.image.get_width(), self.image.get_height()))
+        self.surface.blit(self.image, (0, 0))
+
+        self.surface = self.resize(self.image, 1 / 2)
+
     def determine_top(self, reset=False):
         if reset:
             Card.top_z = 0
@@ -73,15 +85,39 @@ class Card:
         self.rect = surface_to_resize.get_rect(topleft=(self.rect.x, self.rect.y))
         return surface_to_resize
 
-    def handle_event(self, event):
+    def __eq__(self, other):
+        if other:
+            if (
+                self.rank == other.rank
+                or
+                self.color == other.color
+                or
+                self.rank == -1
+            ):
+                return True
+
+        return False
+
+    def duplicate(self, other):
+        return self.color == other.color and self.rank == other.rank
+
+    def handle_event(self, event, current_card):
         # нажатие мыши
         if event.type == pygame.MOUSEBUTTONDOWN:
             # проверка нажатия на карту
             if self.rect.collidepoint(event.pos):
-                # проверка отсутствия взятия двух карт одновременно
-                if not self.match_selection():
-                    # изменяем выбранные карты
-                    Card.selection = self
+                if current_card == Card.selection:
+                    # играем карту
+                    Card.selection.move(X_CENTER, Y_CENTER)
+                    Card.selection.z = 0
+                    Card.selection.surface = Card.selection.resize(Card.selection.image, 1 / 2)
+
+                    # до свидания, карта!
+                    current_card.move(-100, -100)
+
+                    # обновляем значения карт
+                    current_card = Card.selection
+                    Card.selection = None
 
         # перемещение мышки
         elif event.type == pygame.MOUSEMOTION:

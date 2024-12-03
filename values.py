@@ -1,0 +1,14 @@
+# константы
+Y_CENTER = 420
+X_CENTER = 450
+X_DECK = 800
+OFFSET_CARDS = 75
+HEIGHT = 1000
+WIDTH = 1000
+HAND_X = 300
+PLAYER_HAND_Y = 800
+ENEMY_HAND_Y = 100
+TICKS = 60
+
+# цвета
+black = (0, 0, 0)
